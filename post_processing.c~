@@ -1,0 +1,116 @@
+#include "post_processing.h"
+#include <omp.h>
+#include <ctype.h>
+#include <nmmintrin.h>
+#include "global.h"
+
+//打印二进制,打印的是有符号整型的原码
+void print_binary( uint32_t t,int bit_len){
+	short buffer[bit_len];
+	int i;
+	for(i = 0; i < bit_len; i++) {
+		buffer[i] = 0;  
+	}
+     	for (i = 0; i < bit_len; i++) {
+		if (t == 0)
+			break;
+        	if (t % 2 == 0) {
+        		buffer[i] = 0;
+          	} else {
+          		buffer[i] = 1;
+          	}
+          	t = t / 2;
+        }
+	for (i = bit_len - 1; i >= 0; i--) {
+        	printf("%hd", buffer[i]);
+	}
+	printf("\n");
+}
+
+
+
+void post_process(int rank,FILE* result) {
+
+	//构造要写入的文件名llcs.txt
+	const char *s1 = "llcs";
+	char s2[10];
+	const char *s3 = ".txt";
+	char result_file[50];
+
+	//字符串拼接
+	sprintf(s2,"%d",rank); 
+	sprintf(result_file,"%s%s",s1,s2);
+	sprintf(result_file,"%s%s",result_file,s3);	
+
+    	FILE* llcs = fopen(result_file,"w+");
+   	if(!llcs){
+		printf("error:can't open file\n");
+		exit(0);
+	}
+
+   	int mic_counts = 0;
+   	int total_counts = 0;
+	int read_number = 0;
+	int k =0 , i = 0, j = 0;
+
+	mic_write_t* temp_int;//存放比对结果的指针
+	temp_int = (mic_write_t*) _mm_malloc (block_max_seq_num * read32_len * ref_num * sizeof(mic_write_t),64);
+  	int* outcome ;//存放llcs的指针
+	outcome = (int*) _mm_malloc (block_max_seq_num * ref_num * sizeof(int),64);
+    	fseek(result,0,SEEK_SET);//回到文件头
+	for(k = 0; k < read_bucket_num; k++){//一块一块读取
+
+		mic_counts = mic_cpu_counts[k];	
+		printf("mic_counts %d is %d",k,mic_counts);	
+		total_counts = mic_counts * ref_num;
+    	
+		Count(temp_int,outcome,mic_counts,read32_len,seq_len,result);
+	
+		for(i = 0; i < total_counts; i++){
+			fprintf(llcs,"the %dth llcs is %d\n",i + read_number,outcome[i]);
+		}
+
+		read_number += total_counts;
+	}
+
+	fclose(llcs);
+	_mm_free(temp_int);
+	_mm_free(outcome);
+}
+
+
+//计算LLCS---MIC
+void Count(mic_write_t *temp_int,int *outcome,int mic_counts,int read32_len,int seq_len,FILE* result){
+
+	fread(temp_int,sizeof(mic_write_t),mic_counts * read32_len * ref_num, result);	
+
+	int shift_bit = seq_len % BIT_PARA_MIC;
+
+//count the number of llcs
+#pragma omp parallel for
+	for(int i = 0; i < mic_counts ; i += MIC_PARA_NUM) {
+		for(int j = 0; j < MIC_PARA_NUM * ref_num; j += MIC_PARA_NUM) {
+			for(int r = 0; r < MIC_PARA_NUM; r++) {
+
+				int bitCount = 0;
+				mic_write_t last_word = temp_int[i * read32_len * ref_num + j * read32_len + (read32_len - 1) * 16 + r];
+				//若shift_bit不为0 ，则需要将前面的 (32 - shift_bit) 位 置0，否则置0会出错，此时last_word全变为0
+				if(shift_bit != 0){
+					mic_write_t tmp_word = (1 << shift_bit) -1;
+					last_word &= tmp_word;
+				}
+				
+				for(int k = 0; k < read32_len - 1; k++){
+					int bCount = _mm_popcnt_u32(temp_int[i * read32_len * ref_num + j * read32_len + k * 16 + r]);
+					bitCount = bitCount + bCount;
+				}
+				bitCount += _mm_popcnt_u32(last_word);
+				int count = seq_len - bitCount; //若每条read长度不同，则需根据read长度计算
+				outcome[i * ref_num + j + r] = count;
+			}
+		}
+	}
+
+}
+
+
