@@ -32,7 +32,7 @@ void get_rand_str(int seqlen,int seqnum,FILE* file){//产生一行长度为seqle
 
 int main(int argc,char* argv[]){
 	int seqlen = 4000 - 32 ,seqnum = 188000 * 64;  //subject序列长度、序列数目，atoi为windows下将字符串转换为整数的函数
-	const char *file_name = "./newdatabase/seq.fasta";
+	const char *file_name = "./database/seq.fasta";
 	FILE *fasta = fopen(file_name,"w+");
 	if(!fasta){
 		printf("error:can't create file\n");

@@ -14,7 +14,7 @@
 #define SEQUENCE_MAX_LEN 200000
 
 void split_database(int nodes){
-    const char *fasta_file = "./newdatabase/seq.fasta";
+    const char *fasta_file = "./database/seq.fasta";
     FILE* data=fopen(fasta_file,"r");
     if(!data){
         printf("error:can't open input file\n");
@@ -23,7 +23,7 @@ void split_database(int nodes){
     statistics_samples(data);
     int64_t reads_num_pnode = reads_num / nodes;
     //构造要切分的文件名
-    const char *s1 = "./newdatabase/data64/input_seq";
+    const char *s1 = "./database/data64/input_seq";
     char s2[10];
     const char *s3 = ".fasta";
     char read_file[50];
@@ -90,13 +90,13 @@ int main(int argc, char* argv[]){
 	return 0;
 */
     char read_file[50];
-	char ref_file[] = "./newdatabase/ref.fasta";
+	char ref_file[] = "./database/ref.fasta";
 	char result_file[50];
 
-	const char *s1 = "./newdatabase/data64/input_seq";
+	const char *s1 = "./database/data64/input_seq";
 	char s2[10];
 	const char *s3 = ".fasta";
-	const char *s4 = "./newdatabase/data64/result";
+	const char *s4 = "./database/data64/result";
 
 	//构造要读取的的文件名input_seq.fasta
 	sprintf(s2,"%d", rank); 

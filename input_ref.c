@@ -32,7 +32,7 @@ void get_rand_str(int seqlen,int seqnum,FILE* file){//产生一行长度为seqle
 int main(int argc,char* argv[]){
 	int seqlen = 4000 - 32,seqnum = 100;  //subject序列长度、序列数目
 	FILE *fasta;  //新建文件
-	fasta=fopen("./newdatabase/ref.fasta","w+");
+	fasta=fopen("./database/ref.fasta","w+");
 	if(!fasta){
 	  printf("error:can't create file\n");
 	  exit(0);
