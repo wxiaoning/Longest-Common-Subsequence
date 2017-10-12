@@ -8,6 +8,7 @@
 	else if you're on the KNL platforms
 		then use the following make command:
 		make ARCH=LCS_KNL
+	./main
 
 ## Introduction
 
@@ -16,3 +17,7 @@ Longest-Common-Subsequence(LCS) is a software package for accelrating bit-parall
 ## Availability
 
 The latest source code of LCS is freely available st github. After you acquire the source code, use the front `make` instructions to compile and copy the single executable `main` to the destination you want.
+
+## Seeking help
+
+If you have questions about LCS, you may send the questions to xiaoningwang3@163.com.
